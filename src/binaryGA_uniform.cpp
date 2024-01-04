@@ -6,11 +6,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unordered_map>
+#include <fstream>
 using namespace std;
-const int POP_SIZE = 500;
-const int N = 100;
-const int K = 450;
-const double P_CROSSOVER = 1;
+const int POP_SIZE = 100;
+const int N = 10;
+const int K = 2;
+const double P_CROSSOVER = 0.9;
 const double P_MUTATION = (double)1 / N;
 const int TERMINATION = 500;
 typedef vector<bitset<10> > genoType;
@@ -61,36 +62,20 @@ void parentSelection(parents& parent) {
 }
 
 void crossover(parents& parent, vector<genoType>& offspring) {
-    double p = (double) rand() / (RAND_MAX + 1.0);
-    if (p <= P_CROSSOVER) { // 2-point crossover
-        int pos1 = 0, pos2 = 0;
-        pos1 = rand() % (N - 1);
-        pos2 = rand() % (N - 1);
-        while(pos1 == pos2) {
-            pos2 = rand() % (N - 1);
-        }
-        if (pos2 < pos1) {
-            swap(pos1, pos2);
-        }
-        genoType child1, child2;
-        for (int i = 0; i <= pos1; i++) {
+    // uniform crossover
+    genoType child1, child2;
+    for (int i = 0; i < N; i++) {
+        double p = (double) rand() / (RAND_MAX + 1.0);
+        if (p <= P_CROSSOVER) {
             child1.emplace_back(parent.first[i]);
             child2.emplace_back(parent.second[i]);
-        }
-        for (int i = pos1 + 1; i <= pos2; i++) {
+        } else {
             child1.emplace_back(parent.second[i]);
             child2.emplace_back(parent.first[i]);
         }
-        for (int i = pos2 + 1; i <= (N - 1); i++) {
-            child1.emplace_back(parent.first[i]);
-            child2.emplace_back(parent.second[i]);
-        }
-        offspring.emplace_back(child1);
-        offspring.emplace_back(child2);
-    } else { // copy parents
-        offspring.emplace_back(parent.first);
-        offspring.emplace_back(parent.second);
     }
+    offspring.emplace_back(child1);
+    offspring.emplace_back(child2);
 }
 
 void mutation(vector<genoType>& offspring) {
@@ -121,17 +106,14 @@ int main() {
     cout << fitness(pool[0]) << endl;
     parents parent;
     vector<genoType> offspring;
-    for (int t = 0; t < 5; t++) {
-        for (int i = 0; i < TERMINATION; i++) {
-            for (int j = 0; j < POP_SIZE / 2; j++) {
-                parentSelection(parent);
-                crossover(parent, offspring);
-                mutation(offspring);
-            }
-            survivorSelection(offspring);
-            offspring.clear();
-            // cout << "[round " << i+1 << "]: " <<fitness(pool[0]) << endl;
+    for (int i = 0; i < TERMINATION; i++) {
+        for (int j = 0; j < POP_SIZE / 2; j++) {
+            parentSelection(parent);
+            crossover(parent, offspring);
+            mutation(offspring);
         }
-        cout << "[round " << t+1 << "]: " <<fitness(pool[0]) << endl;
+        survivorSelection(offspring);
+        offspring.clear();
+        cout << "[round " << i+1 << "]: " <<fitness(pool[0]) << endl;
     }
 }
